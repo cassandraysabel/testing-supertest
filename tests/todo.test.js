@@ -63,23 +63,29 @@ describe("Todo API Tests", () => {
     );
   });
 
-  it("should return 404 when updating non-existent todo", async () => {
+  it("should return 404 when todo is not found", async () => {
     Todo.findByIdAndUpdate.mockResolvedValue(null);
 
     const res = await request(app)
-      .put("/api/todos/999")
+      .put("/api/todos/123")
       .set("Authorization", `Bearer ${testToken}`)
       .send({
-        title: "Non-existent",
-        completed: false
+        title: "Non-existent Todo",
+        completed: true,
       });
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe("Todo not found");
+    expect(res.body.message).toBe("Todo not found")
+  });
 
-  })
+  it("should return 401 when token is missing", async () => {
+    const res = await request(app)
+      .put("/api/todos/123")
+      .send({
+        title: "Unauthorized Todo",
+        completed: true,
+      });
 
-
-
-
+    expect(res.statusCode).toBe(401);
+  });
 });
