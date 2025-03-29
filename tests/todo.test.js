@@ -36,6 +36,49 @@ describe("Todo API Tests", () => {
     expect(mockTodo.save).toHaveBeenCalled();
   });
 
+  it("should update an existing todo", async () => {
+    const mockUpdatedTodo = {
+      _id: '123',
+      title:'Updated Todo',
+      completed: true,
+    };
+
+    Todo.findByIdAndUpdate.mockResolvedValue(mockUpdatedTodo);
+
+    const res = await request(app)
+      .put("/api/todos/123")
+      .set("Authorization", `Bearer ${testToken}`)
+      .send({
+        title:"Updated Todo",
+        completed: true,
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.title).toBe("Updated Todo");
+    expect(res.body.completed).toBe(true);
+    expect(Todo.findByIdAndUpdate).toHaveBeenCalledWith(
+      "123",
+      { title: "Updated Todo", completed: true },
+      { new: true }
+    );
+  });
+
+  it("should return 404 when updating non-existent todo", async () => {
+    Todo.findByIdAndUpdate.mockResolvedValue(null);
+
+    const res = await request(app)
+      .put("/api/todos/999")
+      .set("Authorization", `Bearer ${testToken}`)
+      .send({
+        title: "Non-existent",
+        completed: false
+      });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toBe("Todo not found");
+
+  })
+
 
 
 
