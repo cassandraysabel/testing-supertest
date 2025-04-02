@@ -1,6 +1,6 @@
 const connect = require("../utils/connect");
 const mongoose = require("mongoose");
-const { mockUpdatedTodo, mockTodo } = require("./mock");
+const { mockUpdatedTodo, mockTodo, emptyMock } = require("./mock");
 const request = require("supertest");
 const app = require("../index");
 const Todo = require("../models/Todo");
@@ -62,6 +62,7 @@ afterAll(async () => {
 });
 describe("Todo API Tests", () => {
   describe("post api", () => {
+    //:>
     it("should create a new todo", async () => {
       Todo.mockImplementation(() => mockTodo);
 
@@ -73,19 +74,32 @@ describe("Todo API Tests", () => {
       expect(res.statusCode).toBe(201);
       expect(res.body.title).toBe("Test Todo");
       expect(mockTodo.save).toHaveBeenCalled();
+      // expect(res.body.completed).toBe(false)
     });
 
-    // it("should default to false when wala nabutangan completed")
+    //:<
+    it("should return a 404 when creating an empty todo", async () => {
+      Todo.mockImplementation(() => emptyMock);
 
-    // it ("should return a 404 when creating a new todo fails")
+      const res = await request(app)
+        .post("/api/todos")
+        .set("Authorization", `Bearer ${testToken}`);
 
-    // it("")
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("should return a 401 when no token provided", async ()=> {
+      Todo.mockImplementation(()=> mockTodo)
+      const res= (await request(app).post("/api/todos"))
+      expect(res.statusCode).toBe(401)
+    })
   });
+
 
   describe("patch api", () => {
     it("should update an existing todo", async () => {
       Todo.findByIdAndUpdate.mockResolvedValue(mockUpdatedTodo);
-
+      //:>
       const res = await request(app)
         .put("/api/todos/123")
         .set("Authorization", `Bearer ${testToken}`)
@@ -103,10 +117,15 @@ describe("Todo API Tests", () => {
         { new: true }
       );
     });
-    // it ("should return a 404 when updating a new todo fails")
-  
+    //:<
+    it ("should return a 404 when updating a todo that doesn't exist", async () => {
+      Todo.findByIdAndUpdate.mockResolvedValue(null)
+
+      const res = await request(app).put(/api/todos)
+    })
+
     // it("should return an error when completed is not boolean when updating")
-  
+
     // it("should return an error when required is not boolean when updating")
   });
 
