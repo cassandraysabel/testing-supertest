@@ -2,7 +2,18 @@ module.exports = {
   mockTodo: {
     _id: "123",
     title: "Test Todo",
-    save: jest.fn().mockResolvedValue({ _id: "123", title: "Test Todo" }),
+    save: jest.fn().mockResolvedValue({ _id: "123", title: "Test Todo", completed: true }),
+  },
+
+  mockTodo2: {
+    _id: "321",
+    title: "Test2 Todo",
+    save: jest.fn().mockResolvedValue({ _id: "321", title: "Test2 Todo", completed: false }),
+  },
+  mockTodo3: {
+    _id: "213",
+    title: "Test3 Todo",
+    save: jest.fn().mockResolvedValue({ _id: "213", title: "Test3 Todo", completed: true }),
   },
 
   mockUpdatedTodo: {
@@ -16,6 +27,11 @@ module.exports = {
     title: "Test todo",
 
   },
+  emptyMock: {},
 
-  emptyMock: {}
+  allTodos: [
+    {_id:"762", title:"Get laundry", complete:false},
+    {_id:"234", title:"Do math homework", complete:true},
+    {_id:"143", title:"Read book", complete:false},
+  ]
 };
