@@ -82,10 +82,19 @@ describe("Todo API Tests", () => {
     // it("")
   });
 
-  describe("patch api", () => {
+  // describe("patch api", () => {
+
+  //   // it ("should return a 404 when updating a new todo fails")
+  
+  //   // it("should return an error when completed is not boolean when updating")
+  
+  //   // it("should return an error when required is not boolean when updating")
+  // });
+
+  describe("put api", () => {
     it("should update an existing todo", async () => {
       Todo.findByIdAndUpdate.mockResolvedValue(mockUpdatedTodo);
-
+  
       const res = await request(app)
         .put("/api/todos/123")
         .set("Authorization", `Bearer ${testToken}`)
@@ -93,7 +102,7 @@ describe("Todo API Tests", () => {
           title: "Updated Todo",
           completed: true,
         });
-
+  
       expect(res.statusCode).toBe(200);
       expect(res.body.title).toBe("Updated Todo");
       expect(res.body.completed).toBe(true);
@@ -103,36 +112,46 @@ describe("Todo API Tests", () => {
         { new: true }
       );
     });
-    // it ("should return a 404 when updating a new todo fails")
   
-    // it("should return an error when completed is not boolean when updating")
+    it("should return 404 when todo is not found", async () => {
+      Todo.findByIdAndUpdate.mockResolvedValue(null);
   
-    // it("should return an error when required is not boolean when updating")
-  });
-
-  it("should return 404 when todo is not found", async () => {
-    Todo.findByIdAndUpdate.mockResolvedValue(null);
-
-    const res = await request(app)
-      .put("/api/todos/123")
-      .set("Authorization", `Bearer ${testToken}`)
-      .send({
-        title: "Non-existent Todo",
+      const res = await request(app)
+        .put("/api/todos/123")
+        .set("Authorization", `Bearer ${testToken}`)
+        .send({
+          title: "Non-existent Todo",
+          completed: true,
+        });
+  
+      expect(res.statusCode).toBe(404);
+      expect(res.body.message).toBe("Todo not found");
+    });
+  
+    it("should return 401 when token is missing", async () => {
+      const res = await request(app).put("/api/todos/123").send({
+        title: "Unauthorized Todo",
         completed: true,
       });
-
-    expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe("Todo not found");
+  
+      expect(res.statusCode).toBe(401);
+    });
   });
 
-  it("should return 401 when token is missing", async () => {
-    const res = await request(app).put("/api/todos/123").send({
-      title: "Unauthorized Todo",
-      completed: true,
+  describe("get single todo", () => {
+    it("should return a single todo", async () => {
+      Todo.findById.mockResolvedValue(mockTodo);
+
+      const res = await request(app)
+        .get("/api/todos/123")
+        .set("Authorization", `Bearer ${testToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.title).toBe("Test Todo");
     });
 
-    expect(res.statusCode).toBe(401);
   });
+  
 
-  // it("should get all todos")
+
 });
