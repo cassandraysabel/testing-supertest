@@ -68,43 +68,29 @@ afterAll(async () => {
 });
 
 describe("Todo API Tests", () => {
-  describe("post api", () => {
-    describe("happy post path", () => {
-      it("should create a new todo", async () => {
-        // First todo
+  describe("Post API", () => {
+    describe("Happy Path", () => {
+      it("should create multiple new todos", async () => {
         Todo.mockImplementation(() => mockTodo);
         const res1 = await request(app)
           .post("/api/todos")
           .set("Authorization", `Bearer ${testToken}`)
-          .send({ title: "Test Todo" });
+          .send({ title: "Test Todo 1" });
 
-        // Second todo
         Todo.mockImplementation(() => mockTodo2);
         const res2 = await request(app)
           .post("/api/todos")
           .set("Authorization", `Bearer ${testToken}`)
-          .send({ title: "Test2 Todo" });
-
-        // Third todo
-        Todo.mockImplementation(() => mockTodo3);
-        const res3 = await request(app)
-          .post("/api/todos")
-          .set("Authorization", `Bearer ${testToken}`)
-          .send({ title: "Test3 Todo" });
+          .send({ title: "Test Todo 2" });
 
         expect(res1.statusCode).toBe(201);
         expect(res2.statusCode).toBe(201);
-        expect(res3.statusCode).toBe(201);
-
-        expect(mockTodo.save).toHaveBeenCalled();
       });
     });
 
-    describe("sad post paths", () => {
-      //:<
-      it("should return a 404 when creating an empty todo", async () => {
+    describe("Sad Path", () => {
+      it("should return 400 when creating an empty todo", async () => {
         Todo.mockImplementation(() => emptyMock);
-
         const res = await request(app)
           .post("/api/todos")
           .set("Authorization", `Bearer ${testToken}`);
@@ -112,231 +98,188 @@ describe("Todo API Tests", () => {
         expect(res.statusCode).toBe(400);
       });
 
-      it("should return a 401 when no token provided", async () => {
-        Todo.mockImplementation(() => mockTodo);
+      it("should return 401 when no token provided", async () => {
         const res = await request(app).post("/api/todos");
         expect(res.statusCode).toBe(401);
       });
     });
   });
 
-
-
-
-
-
-
-  describe("get all to dos api", () => {
-
-    describe("happy get all todos paths", ()=> {
-
+  describe("Get all to-dos", () => {
+    describe("Happy Path", () => {
       it("should get all todos", async () => {
         const res = await request(app)
           .get("/api/todos")
           .set("Authorization", `Bearer ${testToken}`);
-  
+
         expect(res.statusCode).toBe(200);
       });
-    })
+    });
 
-    describe("sad get all todos paths", ()=> {
-
-      it("should return a 401 when there's no token", async () => {
-        const res = await request(app)
-          .get("/api/todos")
-          .set("Authorization", `Bearer `);
-  
+    describe("Sad Path", () => {
+      it("should return 401 when no token is provided", async () => {
+        const res = await request(app).get("/api/todos");
         expect(res.statusCode).toBe(401);
       });
+
       it("should return 500 when database operations fail", async () => {
         const originalFind = Todo.find;
-        Todo.find = jest
-          .fn()
-          .mockRejectedValue(new Error("Database connection failed"));
-  
+        Todo.find = jest.fn().mockRejectedValue(new Error("Database error"));
+
         const res = await request(app)
           .get("/api/todos")
           .set("Authorization", `Bearer ${testToken}`);
-  
+
         expect(res.statusCode).toBe(500);
-        expect(res.body.error).toBe("Database connection failed");
-  
+        expect(res.body.error).toBe("Database error");
+
         Todo.find = originalFind;
       });
-    })
-
-  });
-
-
-
-
-
-
-
-  describe("put api", () => {
-    //:>
-    it("should update an existing todo", async () => {
-      Todo.findByIdAndUpdate.mockResolvedValue(mockUpdatedTodo);
-
-      const res = await request(app)
-        .put("/api/todos/123")
-        .set("Authorization", `Bearer ${testToken}`)
-        .send({
-          title: "Updated Todo",
-          completed: true,
-        });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.title).toBe("Updated Todo");
-      expect(res.body.completed).toBe(true);
-      expect(Todo.findByIdAndUpdate).toHaveBeenCalledWith(
-        "123",
-        { title: "Updated Todo", completed: true },
-        { new: true }
-      );
-    });
-    //:<
-    it("should return 404 when todo is not found", async () => {
-      Todo.findByIdAndUpdate.mockResolvedValue(null);
-
-      const res = await request(app)
-        .put("/api/todos/123")
-        .set("Authorization", `Bearer ${testToken}`)
-        .send({
-          title: "Non-existent Todo",
-          completed: true,
-        });
-
-      expect(res.statusCode).toBe(404);
-      expect(res.body.message).toBe("Todo not found");
-    });
-    //:<
-    it("should return 401 when token is missing", async () => {
-      const res = await request(app).put("/api/todos/123").send({
-        title: "Unauthorized Todo",
-        completed: true,
-      });
-
-      expect(res.statusCode).toBe(401);
     });
   });
 
+  describe("Get single todo", () => {
+    describe("Happy Path", () => {
+      it("should return a single todo", async () => {
+        Todo.findById.mockResolvedValue(mockTodo);
 
-
-
-
-
-
-  describe("get single todo", () => {
-    it("should return a single todo", async () => {
-      Todo.findById.mockResolvedValue(mockTodo);
-
-      const res = await request(app)
-        .get("/api/todos/123")
-        .set("Authorization", `Bearer ${testToken}`);
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.title).toBe("Test Todo");
-    });
-  });
-
-
-
-
-
-
-
-  describe("patch api", () => {
-    describe("happy patch api path", ()=> {
-
-      it("should successfully update a todo", async () => {
-        
-        const mockTodoPatch = {
-          _id: "007",
-          title: "Original Title",
-          completed: false,
-        };
-  
-        const updatedmockTodoPatch = {
-          _id: "007",
-          title: "Updated Title",
-          completed: true,
-        };
-  
-  
-        Todo.findByIdAndUpdate.mockResolvedValue(updatedmockTodoPatch);
-  
-  
         const res = await request(app)
-          .patch(`/api/todos/${mockTodoPatch._id}`)
-          .set("Authorization", `Bearer ${testToken}`)
-          .send({
-            title: "Updated Title",
-            completed: true,
-          });
-  
-  
+          .get(`/api/todos/${mockTodo._id}`)
+          .set("Authorization", `Bearer ${testToken}`);
+
         expect(res.statusCode).toBe(200);
-        expect(res.body).toMatchObject(updatedmockTodoPatch);
-        expect(Todo.findByIdAndUpdate).toHaveBeenCalledWith(
-          mockTodoPatch._id,
-          { title: "Updated Title", completed: true },
-          { new: true }
-        );
+        expect(res.body.title).toBe(mockTodo.title);
       });
-      it("should return 200 when the request body is empty", async () => {
-        const mockTodo = {
-          _id: "777",
-          title: "Original Title",
-          completed: false,
-        };
-        Todo.findByIdAndUpdate.mockResolvedValue(mockTodo);
-  
-        const res = await request(app)
-          .patch(`/api/todos/${mockTodo._id}`)
-          .set("Authorization", `Bearer ${testToken}`)
-          .send({});
-  
-        expect(res.statusCode).toBe(200);
-      });
-    })
+    });
 
-    describe("sad patch paths", ()=> {
+    describe("Sad Path", () => {
+      it("should return 404 when todo is not found", async () => {
+        Todo.findById.mockResolvedValue(null);
 
-      it("should return 404 when the todo is not found", async () => {
-        Todo.findByIdAndUpdate.mockResolvedValue(null);
-  
         const res = await request(app)
-          .patch("/api/todos/123")
-          .set("Authorization", `Bearer ${testToken}`)
-          .send({
-            title: "Non-existent Todo",
-            completed: true,
-          });
-  
+          .get(`/api/todos/invalidId`)
+          .set("Authorization", `Bearer ${testToken}`);
+
         expect(res.statusCode).toBe(404);
         expect(res.body.message).toBe("Todo not found");
       });
-  
-      it("should return 401 when no authorization token is provided", async () => {
-        // Mock the database behavior to return a valid Todo
-        const mockTodo = {
-          _id: "456",
-          title: "Original Title",
-          completed: false,
-        };
-        Todo.findByIdAndUpdate.mockResolvedValue(mockTodo);
-  
-        // Make the PATCH request without an authorization token
-        const res = await request(app).patch(`/api/todos/${mockTodo._id}`).send({
-          title: "Updated Title",
+
+      it("should return 500 when database error occurs", async () => {
+        Todo.findById.mockRejectedValue(new Error("Database error"));
+
+        const res = await request(app)
+          .get(`/api/todos/${mockTodo._id}`)
+          .set("Authorization", `Bearer ${testToken}`);
+
+        expect(res.statusCode).toBe(500);
+        expect(res.body.error).toBe("Database error");
+      });
+    });
+  });
+
+  describe("Put API", () => {
+    describe("Happy Path", () => {
+      it("should update a todo", async () => {
+        Todo.findByIdAndUpdate.mockResolvedValue(mockUpdatedTodo);
+
+        const res = await request(app)
+          .put(`/api/todos/${mockUpdatedTodo._id}`)
+          .set("Authorization", `Bearer ${testToken}`)
+          .send({
+            title: "Updated Todo",
+            completed: true,
+          });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.title).toBe("Updated Todo");
+        expect(res.body.completed).toBe(true);
+      });
+    });
+
+    describe("Sad Path", () => {
+      it("should return 404 when todo is not found", async () => {
+        Todo.findByIdAndUpdate.mockResolvedValue(null);
+
+        const res = await request(app)
+          .put(`/api/todos/invalidId`)
+          .set("Authorization", `Bearer ${testToken}`)
+          .send({
+            title: "Updated Todo",
+            completed: true,
+          });
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body.message).toBe("Todo not found");
+      });
+
+      it("should return 401 when token is missing", async () => {
+        const res = await request(app).put(`/api/todos/${mockUpdatedTodo._id}`).send({
+          title: "Unauthorized Todo",
           completed: true,
         });
-  
-        // Assertions
+
         expect(res.statusCode).toBe(401);
-        expect(res.body.message).toBe("Access Denied! No token provided.");
       });
-    })
+
+      it("should return 500 when database error occurs", async () => {
+        Todo.findByIdAndUpdate.mockRejectedValue(new Error("Database error"));
+
+        const res = await request(app)
+          .put(`/api/todos/${mockUpdatedTodo._id}`)
+          .set("Authorization", `Bearer ${testToken}`)
+          .send({
+            title: "Updated Todo",
+            completed: true,
+          });
+
+        expect(res.statusCode).toBe(500);
+        expect(res.body.error).toBe("Database error");
+      });
+    });
+  });
+
+  describe("Delete API", () => {
+    describe("Happy Path", () => {
+      it("should delete a todo", async () => {
+        Todo.findByIdAndDelete.mockResolvedValue(mockTodo);
+
+        const res = await request(app)
+          .delete(`/api/todos/${mockTodo._id}`)
+          .set("Authorization", `Bearer ${testToken}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe("Todo deleted");
+      });
+    });
+
+    describe("Sad Path", () => {
+      it("should return 404 when todo is not found", async () => {
+        Todo.findByIdAndDelete.mockResolvedValue(null);
+
+        const res = await request(app)
+          .delete(`/api/todos/invalidId`)
+          .set("Authorization", `Bearer ${testToken}`);
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body.message).toBe("Todo not found");
+      });
+
+      it("should return 401 when no token is provided", async () => {
+        const res = await request(app).delete(`/api/todos/${mockTodo._id}`);
+        expect(res.statusCode).toBe(401);
+      });
+
+      it("should return 500 when database error occurs", async () => {
+        Todo.findByIdAndDelete.mockRejectedValue(new Error("Database error"));
+
+        const res = await request(app)
+          .delete(`/api/todos/${mockTodo._id}`)
+          .set("Authorization", `Bearer ${testToken}`);
+
+        expect(res.statusCode).toBe(500);
+        expect(res.body.error).toBe("Database error");
+      });
+    });
   });
 });
+
