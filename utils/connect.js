@@ -4,6 +4,7 @@ const config = require("config");
 
 async function connect() {
   const dbUri = config.get("dbUri");
+  console.log(`🛠️ Connecting to MongoDB at: ${dbUri}`);
 
   try {
     await mongoose.connect(dbUri);
